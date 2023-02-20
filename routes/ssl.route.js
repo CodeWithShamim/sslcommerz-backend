@@ -8,10 +8,10 @@ router.get("/init", (req, res) => {
     total_amount: 100,
     currency: "BDT",
     tran_id: "REF123", // use unique tran_id for each api call
-    success_url: "http://localhost:5000/success",
-    fail_url: "http://localhost:5000/fail",
-    cancel_url: "http://localhost:5000/cancel",
-    ipn_url: "http://localhost:5000/ipn",
+    success_url: `${process.env.URL}/api/v1/ssl/success`,
+    fail_url: `${process.env.URL}/api/v1/ssl/fail`,
+    cancel_url: `${process.env.URL}/api/v1/ssl/cancel`,
+    ipn_url: `${process.env.URL}/api/v1/ssl/ipn`,
     shipping_method: "Courier",
     product_name: "Computer.",
     product_category: "Electronic",
@@ -39,14 +39,57 @@ router.get("/init", (req, res) => {
     process.env.SSL_STORE_PASS,
     is_live
   );
+
+  // ssl init
   sslcz.init(data).then((apiResponse) => {
     let GatewayPageURL = apiResponse.GatewayPageURL;
     // res.redirect(GatewayPageURL);
-    res.status(200).send({
-      message: "success",
-      URL: GatewayPageURL,
-    });
+    if (GatewayPageURL) {
+      res.status(200).json({
+        message: "success",
+        URL: GatewayPageURL,
+      });
+    } else {
+      res.status(400).json({
+        status: "Failed",
+        message: "SSL session was not successful.",
+      });
+    }
+
     console.log("Redirecting to: ", GatewayPageURL);
+  });
+});
+
+// ssl successs route
+router.post("/success", async (req, res, next) => {
+  return res.status(200).json({
+    status: "success",
+    message: "Payment success",
+    data: req.body,
+  });
+});
+// ssl successs route
+router.post("/fail", async (req, res, next) => {
+  return res.status(400).json({
+    status: "Failed",
+    message: "Payment Failed",
+    data: req.body,
+  });
+});
+// ssl successs route
+router.post("/cancel", async (req, res, next) => {
+  return res.status(401).json({
+    status: "cancel",
+    message: "Payment cancel",
+    data: req.body,
+  });
+});
+// ssl successs route
+router.post("/ipn", async (req, res, next) => {
+  return res.status(200).json({
+    status: "success",
+    message: "Payment success",
+    data: req.body,
   });
 });
 
