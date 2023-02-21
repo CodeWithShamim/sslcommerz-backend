@@ -2,6 +2,11 @@ const express = require("express");
 const router = express.Router();
 const SSLCommerzPayment = require("sslcommerz-lts");
 const is_live = false; //true for live, false for sandbox
+const sslcz = new SSLCommerzPayment(
+  process.env.SSL_STORE_ID,
+  process.env.SSL_STORE_PASS,
+  is_live
+);
 
 router.get("/init", (req, res) => {
   const data = {
@@ -34,13 +39,7 @@ router.get("/init", (req, res) => {
     ship_postcode: 1000,
     ship_country: "Bangladesh",
   };
-  const sslcz = new SSLCommerzPayment(
-    process.env.SSL_STORE_ID,
-    process.env.SSL_STORE_PASS,
-    is_live
-  );
 
-  // ssl init
   sslcz.init(data).then((apiResponse) => {
     let GatewayPageURL = apiResponse.GatewayPageURL;
     // res.redirect(GatewayPageURL);
@@ -60,15 +59,45 @@ router.get("/init", (req, res) => {
   });
 });
 
-// ssl successs route
+
 router.post("/success", async (req, res, next) => {
-  return res.status(200).json({
-    status: "success",
-    message: "Payment success",
-    data: req.body,
-  });
+  // return res.status(200).json({
+  //   status: "success",
+  //   message: "Payment success",
+  //   data: req.body,
+  // });
+  if (req.body?.val_id) {
+    sslcz.validate({ val_id: req?.body?.val_id }).then((data) => {
+      const {
+        status,
+        val_id,
+        tran_id,
+        amount,
+        card_type,
+        validated_on,
+        currency,
+      } = data;
+      if (status === "VALID") {
+        //step-1 <<<<<<<<<<<<<<<<<<save in databse  >>>>>>>>>>>>>>>>>>>
+
+        const data = {
+          title: "Payment Completed.",
+          heading: "Congratulations! Your payment successfully completed.",
+          message: `
+          Transantion_Id = ${tran_id}, 
+          Total_Amount = ${amount}, 
+          Method = ${card_type.split("-")[0]}
+          `,
+        };
+        res.render("../assets/index", data);
+      }
+    });
+  }
+    
+
+  
 });
-// ssl successs route
+
 router.post("/fail", async (req, res, next) => {
   return res.status(400).json({
     status: "Failed",
@@ -76,7 +105,7 @@ router.post("/fail", async (req, res, next) => {
     data: req.body,
   });
 });
-// ssl successs route
+
 router.post("/cancel", async (req, res, next) => {
   return res.status(401).json({
     status: "cancel",
@@ -84,7 +113,7 @@ router.post("/cancel", async (req, res, next) => {
     data: req.body,
   });
 });
-// ssl successs route
+
 router.post("/ipn", async (req, res, next) => {
   return res.status(200).json({
     status: "success",
