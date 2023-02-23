@@ -59,7 +59,6 @@ router.get("/init", (req, res) => {
   });
 });
 
-
 router.post("/success", async (req, res, next) => {
   // return res.status(200).json({
   //   status: "success",
@@ -77,26 +76,28 @@ router.post("/success", async (req, res, next) => {
         validated_on,
         currency,
       } = data;
+
+      let url;
       if (status === "VALID") {
         //step-1 <<<<<<<<<<<<<<<<<<save in databse  >>>>>>>>>>>>>>>>>>>
 
-        const data = {
-          title: "Payment Completed.",
-          heading: "Congratulations! Your payment successfully completed.",
-          message: `
-          Transantion_Id = ${tran_id}, 
-          Total_Amount = ${amount}, 
-          Method = ${card_type.split("-")[0]}
-          `,
-        };
-        res.render("../assets/index", data);
+        // const data = {
+        //   title: "Payment Completed.",
+        //   heading: "Congratulations! Your payment successfully completed.",
+        //   message: `
+        //   Transantion_Id = ${tran_id},
+        //   Total_Amount = ${amount},
+        //   Method = ${card_type.split("-")[0]}
+        //   `,
+        // };
+        // res.render("../assets/index", data);
+        url = `${process.env.URL}/api/v1/ssl/success?status=success&tran_id=${tran_id}&total_amount=${amount}&method=${card_type.split("-")[0]}`;
+      
+        res.redirect(url);
       }
     });
   }
-    
-
-  
-});
+})
 
 router.post("/fail", async (req, res, next) => {
   return res.status(400).json({
